@@ -14,25 +14,25 @@ public class DateTimeQuery : BaseQuery
 
 public static class QueryDateTimeSerializer
 {
-    public static DateTime SerializeQueryParameter(string dateTime)
+    public static DateTime DeserializeQueryParameter(string dateTime)
     {
         return DateTime.Parse(dateTime);
     }
 
-    public static string DeserializeQueryParameter(DateTime dateTime)
+    public static string SerializeQueryParameter(DateTime dateTime)
     {
-        return dateTime.ToString("yyyyMMdd");
+        return dateTime.ToString("yyyy-MM-dd");
     }
 }
 
 public static class QueryTimePeriodSerializer
 {
-    public static TimePeriod SerializeQueryParameter(string timePeriod)
+    public static TimePeriod DeserializeQueryParameter(string timePeriod)
     {
         return Enum.Parse<TimePeriod>(timePeriod);
     }    
     
-    public static string DeserializeQueryParameter(TimePeriod timePeriod)
+    public static string SerializeQueryParameter(TimePeriod timePeriod)
     {
         return timePeriod.ToString();
     }

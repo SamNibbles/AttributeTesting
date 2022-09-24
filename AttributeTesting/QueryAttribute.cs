@@ -11,6 +11,8 @@ public class QueryAttribute : Attribute
     public string QueryName { get; init; }
     public Type Serializer { get; init; }
 
+    public QueryAttribute() { }
+
     public QueryAttribute(string queryName, Type serializer)
     {
         QueryName = queryName;
