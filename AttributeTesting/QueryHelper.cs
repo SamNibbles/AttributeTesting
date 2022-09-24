@@ -13,17 +13,11 @@ public static class QueryHelper
     private const string SerializeMethodName = "SerializeQueryParameter";
     private const string DeserializeMethodName = "DeserializeQueryParameter";
 
-    public static void Run(BaseQuery query)
+    public static BaseQuery ExtractQueryFromUrl(string url, Type queryType)
     {
-        var queryProcessors = GetQueryProcessors(query);
+        var queryProcessors = GetQueryProcessors(queryType);
 
-        TestQueryParameterExtraction(typeof(DateTimeQuery), queryProcessors);
-        TestQueryParameterInsertion(query, queryProcessors);
-    }
-
-    private static void TestQueryParameterExtraction(Type queryType, List<QueryProcessor> queryProcessors)
-    {
-        var testUrl = new UriBuilder("www.test.com?startDate=2021-01-02&endDate=2022-02-01&timePeriod=Custom");
+        var testUrl = new UriBuilder(url);
         var queryDict = QueryHelpers.ParseQuery(testUrl.Query);
 
         var queryInstance = Activator.CreateInstance(queryType);
@@ -34,15 +28,13 @@ public static class QueryHelper
             processor.Property.SetValue(queryInstance, deserialiserPropertyValue);
         }
 
-        var instanceType = queryInstance.GetType();
-        var propertyValues = instanceType.GetProperties().Select(property => $"{property.Name}: {property.GetValue(queryInstance)}");
-
-        Console.WriteLine($"Parameter extraction test - Instance type: {instanceType}, Property values: {string.Join(", ", propertyValues)}");
+        return (BaseQuery)queryInstance;
     }
 
-    private static void TestQueryParameterInsertion(BaseQuery query, List<QueryProcessor> queryProcessors)
+    public static string AddQueryToUrl(string baseUrl, BaseQuery query)
     {
         var queryDict = new Dictionary<string, string>();
+        var queryProcessors = GetQueryProcessors(query.GetType());
         foreach (var processor in queryProcessors)
         {
             var propertyValue = processor.Property.GetValue(query);
@@ -50,13 +42,12 @@ public static class QueryHelper
             queryDict.Add(processor.QueryName, serialiserPropertyValue);
         }
 
-        var testUrl = QueryHelpers.AddQueryString("www.test.com", queryDict);
-        Console.WriteLine($"Parameter insertion test - URL: {testUrl}");
+        return QueryHelpers.AddQueryString(baseUrl, queryDict);
     }
 
-    private static List<QueryProcessor> GetQueryProcessors(BaseQuery query)
+    private static List<QueryProcessor> GetQueryProcessors(Type queryType)
     {
-        var queryProperties = query.GetType().GetProperties();
+        var queryProperties = queryType.GetProperties();
         return queryProperties.Select(property =>
         {
             var queryAttribute = property.GetCustomAttribute<QueryAttribute>();
@@ -67,11 +58,6 @@ public static class QueryHelper
                 Serializer = queryAttribute.Serializer
             };
         }).ToList();
-    }
-
-    private static Type[] GetAllQueryClasses()
-    {
-        return typeof(Program).Assembly.GetTypes().Where(type => type.GetCustomAttribute<QueryAttribute>() is not null).ToArray();
     }
 
     private class QueryProcessor
